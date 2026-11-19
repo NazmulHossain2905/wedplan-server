@@ -1,23 +1,13 @@
+import "dotenv/config";
 
-import express from "express";
+import app from "./src/app.js";
+import { connectToMongoDB } from "./src/config/db.js";
+import { logger } from "./src/utils/logger.js";
 
-const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middlewares
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+await connectToMongoDB();
 
-// Routes
-app.get("/", (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: "Express server is running!",
-  });
-});
-
-// Start server
 app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+  logger.info(`Server is running on http://localhost:${PORT}`);
 });
-
