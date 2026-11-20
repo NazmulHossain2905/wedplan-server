@@ -9,6 +9,7 @@ import {
   FREE_ACTIVE_SERVICE_LIMIT,
   isPremiumActive,
 } from "../utils/subscription.js";
+import { toTransaction } from "../utils/transactions.js";
 import {
   getMissingFields,
   isValidObjectId,
@@ -20,6 +21,7 @@ const router = Router();
 
 const servicesCollection = () => getDb().collection("service");
 const bookingsCollection = () => getDb().collection("booking");
+const transactionsCollection = () => getDb().collection("transaction");
 
 /** Everything a vendor must send when creating a service. */
 const REQUIRED_FIELDS = [
@@ -346,6 +348,29 @@ router.delete("/services/:id", async (req, res) => {
     return res.status(500).json({
       success: false,
       error: "Could not delete this service. Please try again.",
+    });
+  }
+});
+
+/** GET /api/vendor/transactions – this vendor's subscription payments. */
+router.get("/transactions", async (req, res) => {
+  try {
+    const transactions = await transactionsCollection()
+      .find({ vendorId: toObjectId(req.user.id) })
+      .sort({ createdAt: -1 })
+      .toArray();
+
+    return res.status(200).json({
+      success: true,
+      transactions: transactions.map(toTransaction),
+      total: transactions.length,
+    });
+  } catch (error) {
+    logger.error(`Could not load vendor transactions: ${error.message}`);
+
+    return res.status(500).json({
+      success: false,
+      error: "Could not load your transactions. Please try again.",
     });
   }
 });
