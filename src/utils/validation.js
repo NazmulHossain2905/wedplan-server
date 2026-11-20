@@ -36,3 +36,23 @@ export function getMissingFields(body = {}, fields = []) {
     return false;
   });
 }
+
+/**
+ * Image URLs come from the client (already uploaded to ImgBB), so we only
+ * check that they look like a real http(s) link.
+ */
+export function isValidUrl(value) {
+  if (typeof value !== "string") return false;
+
+  try {
+    const url = new URL(value.trim());
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+/** Escapes user text before it is used inside a MongoDB regex search. */
+export function escapeRegex(text) {
+  return String(text).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
