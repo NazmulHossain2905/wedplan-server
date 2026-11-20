@@ -9,7 +9,15 @@ import routes from "./routes/index.js";
 const app = express();
 
 // Middlewares
-app.use(express.json());
+app.use(
+  express.json({
+    // Stripe signs the exact bytes it sends, so keep a copy of the raw body
+    // for the webhook route before the JSON parser turns it into an object.
+    verify: (req, res, buffer) => {
+      req.rawBody = buffer;
+    },
+  }),
+);
 app.use(express.urlencoded({ extended: true }));
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(morgan(env.NODE_ENV === "production" ? "combined" : "dev"));
