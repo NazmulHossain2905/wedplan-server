@@ -30,6 +30,8 @@ export function toTransaction(transaction) {
     ...rest,
     status,
     paymentStatus: rest.paymentStatus ?? toPaymentStatus(status),
+    // Stripe needs lowercase, the frontend type uses BDT.
+    currency: String(rest.currency ?? "bdt").toUpperCase(),
   };
 }
 
