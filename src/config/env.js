@@ -41,6 +41,18 @@ export const env = {
    * stays in one place. Defaults to the first CLIENT_URL origin.
    */
   BETTER_AUTH_URL: optionalEnv("BETTER_AUTH_URL", clientOrigins[0]),
+
+  // Stripe. Optional so the server still starts without payment keys.
+  STRIPE_SECRET_KEY: optionalEnv("STRIPE_SECRET_KEY", ""),
+  STRIPE_WEBHOOK_SECRET: optionalEnv("STRIPE_WEBHOOK_SECRET", ""),
+  STRIPE_CURRENCY: optionalEnv("STRIPE_CURRENCY", "bdt").toLowerCase(),
+
+  // Premium plan price (in whole currency units) and length in days.
+  PREMIUM_PRICE: Number(optionalEnv("PREMIUM_PRICE", "4999")),
+  PREMIUM_DURATION_DAYS: Number(optionalEnv("PREMIUM_DURATION_DAYS", "30")),
 };
+
+/** The first CLIENT_URL entry, used for Stripe success/cancel redirects. */
+export const clientOrigin = clientOrigins[0];
 
 export const allowedOrigins = clientOrigins;
