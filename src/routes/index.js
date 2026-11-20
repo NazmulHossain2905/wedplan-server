@@ -1,8 +1,11 @@
 import { Router } from "express";
 
+import adminRoutes from "./admin.routes.js";
 import authRoutes from "./auth.routes.js";
 import profileRoutes from "./profile.routes.js";
+import serviceRoutes from "./service.routes.js";
 import userRoutes from "./user.routes.js";
+import vendorRoutes from "./vendor.routes.js";
 
 const router = Router();
 
@@ -21,5 +24,14 @@ router.use("/api/users", userRoutes);
 
 // The signed-in user's own profile
 router.use("/api/profile", profileRoutes);
+
+// Public services
+router.use("/api/services", serviceRoutes);
+
+// Vendor dashboard (services, and later bookings and subscription)
+router.use("/api/vendor", vendorRoutes);
+
+// Admin dashboard (services, and later users, bookings and transactions)
+router.use("/api/admin", adminRoutes);
 
 export default router;
