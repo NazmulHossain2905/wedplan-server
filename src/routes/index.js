@@ -2,6 +2,7 @@ import { Router } from "express";
 
 import adminRoutes from "./admin.routes.js";
 import authRoutes from "./auth.routes.js";
+import bookingRoutes from "./booking.routes.js";
 import profileRoutes from "./profile.routes.js";
 import serviceRoutes from "./service.routes.js";
 import userRoutes from "./user.routes.js";
@@ -27,6 +28,9 @@ router.use("/api/profile", profileRoutes);
 
 // Public services
 router.use("/api/services", serviceRoutes);
+
+// Customer bookings
+router.use("/api/bookings", bookingRoutes);
 
 // Vendor dashboard (services, and later bookings and subscription)
 router.use("/api/vendor", vendorRoutes);
