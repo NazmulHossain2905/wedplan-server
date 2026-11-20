@@ -2,6 +2,7 @@ import { Router } from "express";
 
 import { getDb } from "../config/db.js";
 import { authenticate, requireRole } from "../middlewares/auth.js";
+import { BOOKING_STATUSES, withBookingDetails } from "../utils/bookings.js";
 import { logger } from "../utils/logger.js";
 import { toService } from "../utils/services.js";
 import {
@@ -18,6 +19,7 @@ import {
 const router = Router();
 
 const servicesCollection = () => getDb().collection("service");
+const bookingsCollection = () => getDb().collection("booking");
 
 /** Everything a vendor must send when creating a service. */
 const REQUIRED_FIELDS = [
@@ -347,5 +349,120 @@ router.delete("/services/:id", async (req, res) => {
     });
   }
 });
+
+/** GET /api/vendor/bookings – booking requests for this vendor's services. */
+router.get("/bookings", async (req, res) => {
+  try {
+    const filter = { vendorId: toObjectId(req.user.id) };
+    const { status } = req.query;
+
+    if (status !== undefined) {
+      if (!BOOKING_STATUSES.includes(status)) {
+        return res.status(400).json({
+          success: false,
+          error: `Status must be one of: ${BOOKING_STATUSES.join(", ")}.`,
+        });
+      }
+
+      filter.status = status;
+    }
+
+    const bookings = await bookingsCollection()
+      .find(filter)
+      .sort({ createdAt: -1 })
+      .toArray();
+
+    return res.status(200).json({
+      success: true,
+      bookings: await withBookingDetails(bookings, { includeCustomer: true }),
+      total: bookings.length,
+    });
+  } catch (error) {
+    logger.error(`Could not load vendor bookings: ${error.message}`);
+
+    return res.status(500).json({
+      success: false,
+      error: "Could not load booking requests. Please try again.",
+    });
+  }
+});
+
+/** PATCH /api/vendor/bookings/:id/accept – accept a pending request. */
+router.patch("/bookings/:id/accept", async (req, res) => {
+  try {
+    return await updateBookingStatus(req, res, "accepted");
+  } catch (error) {
+    logger.error(`Could not accept booking: ${error.message}`);
+
+    return res.status(500).json({
+      success: false,
+      error: "Could not accept this booking. Please try again.",
+    });
+  }
+});
+
+/** PATCH /api/vendor/bookings/:id/reject – reject a pending request. */
+router.patch("/bookings/:id/reject", async (req, res) => {
+  try {
+    return await updateBookingStatus(req, res, "rejected");
+  } catch (error) {
+    logger.error(`Could not reject booking: ${error.message}`);
+
+    return res.status(500).json({
+      success: false,
+      error: "Could not reject this booking. Please try again.",
+    });
+  }
+});
+
+async function updateBookingStatus(req, res, status) {
+  if (!isValidObjectId(req.params.id)) {
+    return res.status(400).json({
+      success: false,
+      error: "Invalid booking id.",
+    });
+  }
+
+  const booking = await bookingsCollection().findOne({
+    _id: toObjectId(req.params.id),
+  });
+
+  if (!booking) {
+    return res.status(404).json({
+      success: false,
+      error: "Booking not found.",
+    });
+  }
+
+  if (String(booking.vendorId) !== req.user.id) {
+    return res.status(403).json({
+      success: false,
+      error: "You can only manage bookings for your own services.",
+    });
+  }
+
+  if (booking.status !== "pending") {
+    return res.status(400).json({
+      success: false,
+      error: "Only pending bookings can be accepted or rejected.",
+    });
+  }
+
+  const updated = await bookingsCollection().findOneAndUpdate(
+    { _id: booking._id },
+    { $set: { status, updatedAt: new Date() } },
+    { returnDocument: "after" },
+  );
+
+  const [withDetails] = await withBookingDetails([updated], {
+    includeCustomer: true,
+  });
+
+  return res.status(200).json({
+    success: true,
+    message: status === "accepted" ? "Booking accepted." : "Booking rejected.",
+    booking: withDetails,
+  });
+}
 
 export default router;
