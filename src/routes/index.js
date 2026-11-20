@@ -5,6 +5,7 @@ import authRoutes from "./auth.routes.js";
 import bookingRoutes from "./booking.routes.js";
 import profileRoutes from "./profile.routes.js";
 import serviceRoutes from "./service.routes.js";
+import subscriptionRoutes from "./subscription.routes.js";
 import userRoutes from "./user.routes.js";
 import vendorRoutes from "./vendor.routes.js";
 
@@ -31,6 +32,9 @@ router.use("/api/services", serviceRoutes);
 
 // Customer bookings
 router.use("/api/bookings", bookingRoutes);
+
+// Subscription plans, Stripe checkout and webhook
+router.use("/api/subscription", subscriptionRoutes);
 
 // Vendor dashboard (services, and later bookings and subscription)
 router.use("/api/vendor", vendorRoutes);
