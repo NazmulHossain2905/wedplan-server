@@ -10,6 +10,19 @@ export async function connectToMongoDB() {
     client = new MongoClient(env.MONGODB_URI);
     await client.connect();
     db = client.db(env.DB_NAME);
+
+    // Indexes for the fields every list/count endpoint filters on.
+    await Promise.all([
+      db.collection("service").createIndex({ status: 1, isAvailable: 1, createdAt: -1 }),
+      db.collection("service").createIndex({ category: 1, location: 1 }),
+      db.collection("booking").createIndex({ customerId: 1, createdAt: -1 }),
+      db.collection("booking").createIndex({ vendorId: 1, status: 1 }),
+      db.collection("booking").createIndex({ serviceId: 1, eventDate: 1 }),
+      db.collection("transaction").createIndex({ stripeSessionId: 1 }),
+      db.collection("transaction").createIndex({ vendorId: 1, createdAt: -1 }),
+      db.collection("user").createIndex({ role: 1 }),
+    ]);
+
     logger.success(
       `You successfully connected to MongoDB (database: ${env.DB_NAME})!`,
     );
