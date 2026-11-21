@@ -99,19 +99,28 @@ router.get("/", async (req, res) => {
       }
     }
 
-    const total = await servicesCollection().countDocuments(filter);
-
-    const services = await servicesCollection()
-      .find(filter)
-      .sort(SORT_OPTIONS[sortKey])
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .toArray();
+    // Locations come from live services only, so the filter never offers a
+    // location that has nothing to show.
+    const [total, locations, services] = await Promise.all([
+      servicesCollection().countDocuments(filter),
+      servicesCollection().distinct("location", {
+        status: "approved",
+        isAvailable: true,
+        location: { $nin: ["", null] },
+      }),
+      servicesCollection()
+        .find(filter)
+        .sort(SORT_OPTIONS[sortKey])
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .toArray(),
+    ]);
 
     return res.status(200).json({
       success: true,
       services: await withVendors(services),
       total,
+      locations: locations.filter(Boolean).sort(),
       page,
       limit,
     });
