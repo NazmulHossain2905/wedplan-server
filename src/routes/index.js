@@ -1,6 +1,6 @@
 import { Router } from "express";
 
-import { isDbConnected } from "../config/db.js";
+import { connectToMongoDB } from "../config/db.js";
 
 import adminRoutes from "./admin.routes.js";
 import authRoutes from "./auth.routes.js";
@@ -15,11 +15,21 @@ import vendorsRoutes from "./vendors.routes.js";
 
 const router = Router();
 
-router.get("/", (req, res) => {
+router.get("/", async (req, res) => {
+  // Also acts as a deployment health check: it waits for the database so the
+  // reported state is accurate on a cold start.
+  let database = "connected";
+
+  try {
+    await connectToMongoDB();
+  } catch {
+    database = "disconnected";
+  }
+
   res.status(200).json({
     success: true,
     message: "Express server is running!",
-    database: isDbConnected() ? "connected" : "disconnected",
+    database,
   });
 });
 
