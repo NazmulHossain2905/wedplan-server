@@ -304,4 +304,79 @@ router.patch("/:id/cancel", requireRole("customer"), async (req, res) => {
   }
 });
 
+/**
+ * PATCH /api/bookings/:id/respond – accept or reject a request. (Vendor only)
+ *
+ * Same action as /api/vendor/bookings/:id/accept|reject, exposed under the
+ * path the frontend already uses. The vendor must own the booking and the
+ * request must still be pending.
+ */
+router.patch("/:id/respond", requireRole("vendor"), async (req, res) => {
+  try {
+    if (!isValidObjectId(req.params.id)) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid booking id.",
+      });
+    }
+
+    const { status } = req.body ?? {};
+
+    if (!["accepted", "rejected"].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        error: "Status must be one of: accepted, rejected.",
+      });
+    }
+
+    const booking = await bookingsCollection().findOne({
+      _id: toObjectId(req.params.id),
+    });
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        error: "Booking not found.",
+      });
+    }
+
+    if (String(booking.vendorId) !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        error: "You can only respond to bookings for your own services.",
+      });
+    }
+
+    if (booking.status !== "pending") {
+      return res.status(400).json({
+        success: false,
+        error: "Only pending bookings can be accepted or rejected.",
+      });
+    }
+
+    const updated = await bookingsCollection().findOneAndUpdate(
+      { _id: booking._id },
+      { $set: { status, updatedAt: new Date() } },
+      { returnDocument: "after" },
+    );
+
+    const [withDetails] = await withBookingDetails([updated], {
+      includeCustomer: true,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: status === "accepted" ? "Booking accepted." : "Booking rejected.",
+      booking: withDetails,
+    });
+  } catch (error) {
+    logger.error(`Could not respond to booking: ${error.message}`);
+
+    return res.status(500).json({
+      success: false,
+      error: "Could not update this booking. Please try again.",
+    });
+  }
+});
+
 export default router;
