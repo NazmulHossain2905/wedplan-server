@@ -28,8 +28,8 @@ export const PREMIUM_PLAN = {
   maxActiveServices: null,
   durationDays: env.PREMIUM_DURATION_DAYS,
   features: [
-    "Unlimited active services",
-    "30 days of premium access",
-    "All Free plan features",
+    "Unlimited Active Services",
+    "Premium Vendor Badge",
+    "All Free Plan Features",
   ],
 };
