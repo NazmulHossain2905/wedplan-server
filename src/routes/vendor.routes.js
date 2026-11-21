@@ -19,6 +19,15 @@ import {
 
 const router = Router();
 
+const SERVICE_CATEGORIES = [
+  "Photography & Videography",
+  "Wedding Venues",
+  "Decoration & Florist",
+  "Catering Services",
+  "Makeup & Styling",
+  "Wedding Fashion",
+];
+
 const servicesCollection = () => getDb().collection("service");
 const bookingsCollection = () => getDb().collection("booking");
 const transactionsCollection = () => getDb().collection("transaction");
@@ -73,6 +82,12 @@ function readServiceFields(body = {}) {
     }
 
     data[field] = body[field].trim();
+  }
+
+  if (data.category !== undefined && !SERVICE_CATEGORIES.includes(data.category)) {
+    return {
+      error: `Category must be one of: ${SERVICE_CATEGORIES.join(", ")}.`,
+    };
   }
 
   if (body.price !== undefined) {
@@ -175,6 +190,7 @@ router.post("/services", async (req, res) => {
     if (!isPremiumActive(req.user)) {
       const activeCount = await servicesCollection().countDocuments({
         vendorId,
+        status: "approved",
         isAvailable: true,
       });
 
@@ -276,6 +292,7 @@ router.patch("/services/:id", async (req, res) => {
     ) {
       const activeCount = await servicesCollection().countDocuments({
         vendorId: toObjectId(req.user.id),
+        status: "approved",
         isAvailable: true,
       });
 
@@ -371,7 +388,9 @@ router.get("/stats", async (req, res) => {
     return res.status(200).json({
       success: true,
       totalServices: services.length,
-      activeServices: services.filter((s) => s.isAvailable).length,
+      activeServices: services.filter(
+        (s) => s.status === "approved" && s.isAvailable,
+      ).length,
       pendingBookings: count("pending"),
       acceptedBookings: count("accepted"),
       currentPlan: isPremiumActive(req.user) ? "premium" : "free",
