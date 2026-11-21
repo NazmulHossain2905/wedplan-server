@@ -7,8 +7,10 @@ let db = null;
 let connection = null;
 
 /**
- * Connects once and caches the promise, so calling this from index.js and
- * from the serverless entry point at the same time is safe.
+ * Connects once and caches the promise, so index.js and the `ensureDb`
+ * middleware never open two connections. A failed attempt clears the cache
+ * so the next request can try again (important on serverless, where a
+ * transient network error must not poison the whole instance).
  */
 export async function connectToMongoDB() {
   if (db) return db;
@@ -16,7 +18,13 @@ export async function connectToMongoDB() {
 
   connection = (async () => {
     try {
-      client = new MongoClient(env.MONGODB_URI);
+      client = new MongoClient(env.MONGODB_URI, {
+        // Serverless creates many short-lived instances; a small pool per
+        // instance keeps us under the Atlas connection limit.
+        maxPoolSize: 5,
+        // Fail fast instead of hanging until the platform times out (504).
+        serverSelectionTimeoutMS: 3000,
+      });
       await client.connect();
       db = client.db(env.DB_NAME);
 
@@ -38,28 +46,13 @@ export async function connectToMongoDB() {
       return db;
     } catch (error) {
       logger.error(`Failed to connect to MongoDB: ${error.message}`);
-      connection = null; // allow a retry on the next request
+      connection = null;
+      client = null;
       throw error;
     }
   })();
 
   return connection;
-}
-
-/**
- * On Vercel the Express app may be imported directly by the serverless
- * function instead of through index.js. Connecting at module load guarantees
- * every entry point has a database before it handles a request.
- */
-try {
-  await connectToMongoDB();
-} catch {
-  // getDb() below reports the failure per request; don't stop the app from
-  // loading so health checks and non-DB routes still respond.
-}
-
-export function isDbConnected() {
-  return Boolean(db);
 }
 
 export function getDb() {
