@@ -352,6 +352,41 @@ router.delete("/services/:id", async (req, res) => {
   }
 });
 
+/** GET /api/vendor/stats – numbers shown on the vendor dashboard. */
+router.get("/stats", async (req, res) => {
+  try {
+    const vendorId = toObjectId(req.user.id);
+
+    const [services, bookings] = await Promise.all([
+      servicesCollection()
+        .find({ vendorId }, { projection: { isAvailable: 1 } })
+        .toArray(),
+      bookingsCollection()
+        .find({ vendorId }, { projection: { status: 1 } })
+        .toArray(),
+    ]);
+
+    const count = (status) => bookings.filter((b) => b.status === status).length;
+
+    return res.status(200).json({
+      success: true,
+      totalServices: services.length,
+      activeServices: services.filter((s) => s.isAvailable).length,
+      pendingBookings: count("pending"),
+      acceptedBookings: count("accepted"),
+      currentPlan: isPremiumActive(req.user) ? "premium" : "free",
+      planExpiresAt: req.user.subscriptionExpiresAt ?? null,
+    });
+  } catch (error) {
+    logger.error(`Could not load vendor stats: ${error.message}`);
+
+    return res.status(500).json({
+      success: false,
+      error: "Could not load your dashboard numbers. Please try again.",
+    });
+  }
+});
+
 /** GET /api/vendor/transactions – this vendor's subscription payments. */
 router.get("/transactions", async (req, res) => {
   try {
