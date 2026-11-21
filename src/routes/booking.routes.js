@@ -40,6 +40,16 @@ router.post("/", requireRole("customer"), async (req, res) => {
       });
     }
 
+    if (
+      typeof body.eventLocation !== "string" ||
+      !body.eventLocation.trim()
+    ) {
+      return res.status(400).json({
+        success: false,
+        error: "eventLocation must be a non-empty string.",
+      });
+    }
+
     if (!isValidObjectId(body.serviceId)) {
       return res.status(400).json({
         success: false,
