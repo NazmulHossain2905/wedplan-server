@@ -1,5 +1,7 @@
 import { Router } from "express";
 
+import { isDbConnected } from "../config/db.js";
+
 import adminRoutes from "./admin.routes.js";
 import authRoutes from "./auth.routes.js";
 import bookingRoutes from "./booking.routes.js";
@@ -17,6 +19,7 @@ router.get("/", (req, res) => {
   res.status(200).json({
     success: true,
     message: "Express server is running!",
+    database: isDbConnected() ? "connected" : "disconnected",
   });
 });
 
