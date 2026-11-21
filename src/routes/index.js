@@ -3,11 +3,13 @@ import { Router } from "express";
 import adminRoutes from "./admin.routes.js";
 import authRoutes from "./auth.routes.js";
 import bookingRoutes from "./booking.routes.js";
+import customerRoutes from "./customer.routes.js";
 import profileRoutes from "./profile.routes.js";
 import serviceRoutes from "./service.routes.js";
 import subscriptionRoutes from "./subscription.routes.js";
 import userRoutes from "./user.routes.js";
 import vendorRoutes from "./vendor.routes.js";
+import vendorsRoutes from "./vendors.routes.js";
 
 const router = Router();
 
@@ -27,11 +29,13 @@ router.use("/api/users", userRoutes);
 // The signed-in user's own profile
 router.use("/api/profile", profileRoutes);
 
-// Public services
+// Public services and vendors
 router.use("/api/services", serviceRoutes);
+router.use("/api/vendors", vendorsRoutes);
 
-// Customer bookings
+// Customer bookings and dashboard numbers
 router.use("/api/bookings", bookingRoutes);
+router.use("/api/customer", customerRoutes);
 
 // Subscription plans, Stripe checkout and webhook
 router.use("/api/subscription", subscriptionRoutes);
