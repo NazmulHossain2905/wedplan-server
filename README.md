@@ -16,6 +16,10 @@ Express 5 REST API for WedPlan. It stores services, bookings and subscription tr
 
 Node.js (ESM), Express 5, MongoDB driver 7 (no ORM), `jose` for JWT/JWKS verification, Stripe SDK, cors, morgan, dotenv, chalk.
 
+### Business collections
+
+The assignment lists the business collections as `Services`, `Bookings` and `Transactions`. This API uses the conventional singular names `service`, `booking` and `transaction` for those same three collections (plus Better Auth's own `user`, `session`, `account` and `verification` collections). No duplicate collections are created.
+
 ## Installation
 
 ```bash
@@ -45,6 +49,7 @@ Never commit `.env` or any secret key.
 ```bash
 npm run dev     # node --watch
 npm start       # production-style start
+npm run seed:services  # ensure at least 6 approved + active services exist
 ```
 
 The API listens on `http://localhost:5000`. For local Stripe webhooks:
@@ -69,6 +74,7 @@ Put the printed `whsec_...` into `STRIPE_WEBHOOK_SECRET` and restart the server.
 
 ## Links
 
-- Live website: _to be added after deployment_
+- Live website: https://wedplan-bd.vercel.app/
+- API base URL: https://wedplan-api.vercel.app/
 - Client repository: https://github.com/NazmulHossain2905/wedplan-client
 - Server repository: https://github.com/NazmulHossain2905/wedplan-server
