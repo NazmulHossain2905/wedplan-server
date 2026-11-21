@@ -3,6 +3,7 @@ import express from "express";
 import morgan from "morgan";
 
 import { allowedOrigins, env } from "./config/env.js";
+import { ensureDb } from "./middlewares/ensure-db.js";
 import { errorHandler, notFound } from "./middlewares/error.js";
 import routes from "./routes/index.js";
 
@@ -21,6 +22,10 @@ app.use(
 app.use(express.urlencoded({ extended: true }));
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(morgan(env.NODE_ENV === "production" ? "combined" : "dev"));
+
+// Connect before any /api route reads MongoDB (works with any entry point).
+// The root health check stays outside so it can report a DB failure.
+app.use("/api", ensureDb);
 
 // Routes
 app.use("/", routes);
