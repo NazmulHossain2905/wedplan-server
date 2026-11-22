@@ -4,7 +4,7 @@
 
 Express 5 REST API for WedPlan. It stores services, bookings and subscription transactions in MongoDB and verifies JWTs issued by the Next.js/Better Auth app against its JWKS endpoint. Login and registration stay in Better Auth; this server only authorizes and manages business data.
 
-## Features
+## Important Features
 
 - JWT (JWKS) middleware with role checks (admin/vendor/customer) and blocked-account rejection
 - Public service catalogue with search, filters, sorting and location list
@@ -15,7 +15,7 @@ Express 5 REST API for WedPlan. It stores services, bookings and subscription tr
 - Stripe Checkout for a 30-day Premium pass; activation happens only in the verified webhook
 - Environment-driven configuration and consistent `{ success, ... }` / `{ success: false, error }` responses
 
-## Tech Stack
+## Technology Stack
 
 Node.js (ESM), Express 5, MongoDB driver 7 (no ORM), `jose` for JWT/JWKS verification, Stripe SDK, cors, morgan, dotenv, chalk.
 
@@ -26,6 +26,8 @@ Prerequisites:
 - Node.js 20+ and npm
 - A MongoDB database shared with the client
 - The `wedplan-client` app running so this API can fetch `/api/auth/jwks` and verify tokens
+
+### How to Run the Project Locally
 
 Clone the repo, install dependencies, create `.env` from `.env.example`, point `BETTER_AUTH_URL` at the client, then run `npm start`. The API listens on `http://localhost:5000`.
 
@@ -140,10 +142,14 @@ Business collections use conventional singular names: `service`, `booking` and `
 
 Deploy the client and this API separately (Vercel is used for the hosted instance). Set every variable from the Environment Variables table in the hosting platform; in particular `BETTER_AUTH_URL` must point to the deployed client so JWKS verification works, and `CLIENT_URL` must include the client origin for CORS. Configure the Stripe webhook to `https://<api-host>/api/subscription/webhook`, set `STRIPE_WEBHOOK_SECRET` from the signing secret, and restart. Use `npm start` as the start command; `GET /` is the health check.
 
+## Live Website Link
+
+https://wedplan-bd.vercel.app/
+
 ## Related Repository
 
-- Client (Next.js frontend): https://github.com/NazmulHossain2905/wedplan-client
-- Live website: https://wedplan-bd.vercel.app/
+- Client repository (Next.js frontend): https://github.com/NazmulHossain2905/wedplan-client
+- Server repository (this API): https://github.com/NazmulHossain2905/wedplan-server
 
 ## 📄 License
 
