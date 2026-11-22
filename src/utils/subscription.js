@@ -6,7 +6,10 @@
  * admin. These helpers decide what the current plan allows.
  */
 
-/** Free vendors may keep at most this many active services. */
+/**
+ * Free vendors may submit at most this many plan-consuming services.
+ * Pending and approved services count; rejected ones free a slot.
+ */
 export const FREE_ACTIVE_SERVICE_LIMIT = 3;
 
 /**

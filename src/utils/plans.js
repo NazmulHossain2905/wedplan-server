@@ -13,7 +13,7 @@ export const FREE_PLAN = {
   currency: env.STRIPE_CURRENCY,
   maxActiveServices: FREE_ACTIVE_SERVICE_LIMIT,
   features: [
-    "Maximum 3 active services",
+    "Up to 3 pending or approved services",
     "Basic vendor dashboard",
     "Booking request management",
     "Public vendor profile",
@@ -28,7 +28,7 @@ export const PREMIUM_PLAN = {
   maxActiveServices: null,
   durationDays: env.PREMIUM_DURATION_DAYS,
   features: [
-    "Unlimited Active Services",
+    "Unlimited Services",
     "Premium Vendor Badge",
     "All Free Plan Features",
   ],

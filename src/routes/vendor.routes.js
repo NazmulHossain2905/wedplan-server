@@ -32,6 +32,20 @@ const servicesCollection = () => getDb().collection("service");
 const bookingsCollection = () => getDb().collection("booking");
 const transactionsCollection = () => getDb().collection("transaction");
 
+/**
+ * A Free-plan slot is consumed when a vendor submits work, not only when it
+ * goes live: pending (awaiting review) and approved services both count.
+ * Rejected — or any future status such as archived — releases the slot.
+ */
+const PLAN_COUNTED_STATUSES = ["pending", "approved"];
+
+function countPlanServices(vendorId) {
+  return servicesCollection().countDocuments({
+    vendorId,
+    status: { $in: PLAN_COUNTED_STATUSES },
+  });
+}
+
 /** Everything a vendor must send when creating a service. */
 const REQUIRED_FIELDS = [
   "serviceName",
@@ -164,7 +178,7 @@ router.get("/services", async (req, res) => {
  * POST /api/vendor/services – create a service.
  *
  * New services start as "pending" and only become public after an admin
- * approves them. Free vendors may keep at most 3 active services.
+ * approves them. Pending and approved services both consume a Free-plan slot.
  */
 router.post("/services", async (req, res) => {
   try {
@@ -188,16 +202,12 @@ router.post("/services", async (req, res) => {
     const vendorId = toObjectId(req.user.id);
 
     if (!isPremiumActive(req.user)) {
-      const activeCount = await servicesCollection().countDocuments({
-        vendorId,
-        status: "approved",
-        isAvailable: true,
-      });
+      const usedSlots = await countPlanServices(vendorId);
 
-      if (activeCount >= FREE_ACTIVE_SERVICE_LIMIT) {
+      if (usedSlots >= FREE_ACTIVE_SERVICE_LIMIT) {
         return res.status(403).json({
           success: false,
-          error: `The Free plan allows ${FREE_ACTIVE_SERVICE_LIMIT} active services. Upgrade to Premium for unlimited services.`,
+          error: `The Free plan allows ${FREE_ACTIVE_SERVICE_LIMIT} pending or approved services. Rejected services don't count. Upgrade to Premium for unlimited services.`,
         });
       }
     }
@@ -284,25 +294,8 @@ router.patch("/services/:id", async (req, res) => {
       });
     }
 
-    // Re-activating a service counts towards the Free plan limit.
-    if (
-      data.isAvailable === true &&
-      service.isAvailable === false &&
-      !isPremiumActive(req.user)
-    ) {
-      const activeCount = await servicesCollection().countDocuments({
-        vendorId: toObjectId(req.user.id),
-        status: "approved",
-        isAvailable: true,
-      });
-
-      if (activeCount >= FREE_ACTIVE_SERVICE_LIMIT) {
-        return res.status(403).json({
-          success: false,
-          error: `The Free plan allows ${FREE_ACTIVE_SERVICE_LIMIT} active services. Upgrade to Premium for unlimited services.`,
-        });
-      }
-    }
+    // Availability does not affect plan usage: pending and approved services
+    // already consume their slot, so toggling it never needs a limit check.
 
     const updated = await servicesCollection().findOneAndUpdate(
       { _id: service._id },
@@ -388,8 +381,13 @@ router.get("/stats", async (req, res) => {
     return res.status(200).json({
       success: true,
       totalServices: services.length,
+      // Publicly visible only — kept for "active" reporting.
       activeServices: services.filter(
         (s) => s.status === "approved" && s.isAvailable,
+      ).length,
+      // Free-plan usage: submitted work awaiting review plus approved work.
+      usedServiceSlots: services.filter((s) =>
+        PLAN_COUNTED_STATUSES.includes(s.status),
       ).length,
       pendingBookings: count("pending"),
       acceptedBookings: count("accepted"),
