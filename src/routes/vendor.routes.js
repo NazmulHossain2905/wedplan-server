@@ -376,7 +376,7 @@ router.get("/stats", async (req, res) => {
 
     const [services, bookings] = await Promise.all([
       servicesCollection()
-        .find({ vendorId }, { projection: { isAvailable: 1 } })
+        .find({ vendorId }, { projection: { status: 1, isAvailable: 1 } })
         .toArray(),
       bookingsCollection()
         .find({ vendorId }, { projection: { status: 1 } })
